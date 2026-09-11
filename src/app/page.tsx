@@ -15,7 +15,7 @@ async function getReviews() {
 // 2. Fonction pour récupérer le Matériel
 async function getEquipment() {
   try {
-    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/equipment', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipment`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {

@@ -2,7 +2,7 @@ import ProjectCard from '../../../components/video/ProjectCard';
 
 async function getProject(id: string) {
   try {
-    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`, { cache: 'no-store' });
     const all = await res.json();
     return all.find((p: any) => p.id === id);
   } catch (error) { return null; }
@@ -10,7 +10,7 @@ async function getProject(id: string) {
 
 async function getAllProjects() {
   try {
-    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`, { cache: 'no-store' });
     return res.json();
   } catch (error) { return []; }
 }

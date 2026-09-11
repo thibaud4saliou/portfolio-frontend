@@ -2,7 +2,7 @@ import ProjectCard from '../../components/video/ProjectCard';
 
 async function getProjects() {
   try {
-    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) { return []; }
