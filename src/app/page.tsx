@@ -3,7 +3,7 @@ import Link from 'next/link';
 // 1. Fonction pour récupérer les Avis
 async function getReviews() {
   try {
-    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/reviews', { cache: 'no-store' })';
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
