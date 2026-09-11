@@ -3,7 +3,7 @@ import Link from 'next/link';
 // 1. Fonction pour récupérer les Avis
 async function getReviews() {
   try {
-    const res = await fetch('http://localhost:5001/api/reviews', { cache: 'no-store' });
+    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/reviews', { cache: 'no-store' })';
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
@@ -15,7 +15,7 @@ async function getReviews() {
 // 2. Fonction pour récupérer le Matériel
 async function getEquipment() {
   try {
-    const res = await fetch('http://localhost:5001/api/equipment', { cache: 'no-store' });
+    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/equipment', { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {

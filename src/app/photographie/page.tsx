@@ -9,7 +9,7 @@ export default function Photographie() {
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        const res = await fetch('http://localhost:5001/api/photos');
+        const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/photos');
         if (res.ok) setPhotos(await res.json());
       } catch (error) {
         console.error("Erreur", error);
