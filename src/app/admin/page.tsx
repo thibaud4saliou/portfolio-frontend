@@ -86,7 +86,7 @@ export default function AdminPage() {
       
       <div className="flex flex-wrap gap-4 mb-8 justify-center border-b border-gray-900 pb-4">
         {['projects', 'photos', 'reviews', 'equipment'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`text-xs uppercase tracking-widest px-4 py-2 ${activeTab === tab ? 'bg-white text-black font-bold' : 'text-gray-500 hover:text-white'}`}>
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`text-xs uppercase tracking-widest px-4 py-2 ${activeTab === tab ? 'bg-white text-black font-bold' : 'text-gray-400 hover:text-white'}`}>
             {tab === 'projects' ? 'Vidéos' : tab === 'photos' ? 'Photographie' : tab === 'reviews' ? 'Avis' : 'Matériel'}
           </button>
         ))}
