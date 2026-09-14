@@ -43,7 +43,7 @@ export default function AdminPage() {
     else if (type === "equipment") bodyData = { ...equipmentData, order: Number(equipmentData.order) };
 
     const method = editingId ? "PUT" : "POST";
-    const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${editingId}` : `http://${process.env.NEXT_PUBLIC_API_URL}/api/${type}`;
+    const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/${type}`;
 
     try {
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) });
