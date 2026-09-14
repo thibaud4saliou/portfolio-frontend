@@ -43,7 +43,7 @@ export default function AdminPage() {
     else if (type === "equipment") bodyData = { ...equipmentData, order: Number(equipmentData.order) };
 
     const method = editingId ? "PUT" : "POST";
-    const url = editingId ? `http://${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${editingId}` : `http://${process.env.NEXT_PUBLIC_API_URL}/api/${type}`;
+    const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${editingId}` : `http://${process.env.NEXT_PUBLIC_API_URL}/api/${type}`;
 
     try {
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) });
@@ -74,7 +74,7 @@ export default function AdminPage() {
 
   const handleDelete = async (id: string, type: string) => {
     if (!window.confirm("Supprimer définitivement ?")) return;
-    const res = await fetch(`http://${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${id}`, { method: "DELETE" });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${id}`, { method: "DELETE" });
     if (res.ok) fetchItems(type);
   };
 
