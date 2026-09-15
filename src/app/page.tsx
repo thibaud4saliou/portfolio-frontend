@@ -6,10 +6,7 @@ async function getReviews() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
-  } catch (error) {
-    console.error("Erreur API Avis:", error);
-    return [];
-  }
+  } catch (error) { return []; }
 }
 
 // 2. Fonction pour récupérer le Matériel
@@ -18,29 +15,45 @@ async function getEquipment() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipment`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
-  } catch (error) {
-    console.error("Erreur API Matériel:", error);
-    return [];
-  }
+  } catch (error) { return []; }
+}
+
+// 3. NOUVEAU : Fonction pour récupérer la Configuration
+async function getSettings() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data[0] : data;
+  } catch (error) { return null; }
 }
 
 export default async function Home() {
   // Récupération des données depuis la BDD
   const reviews = await getReviews();
   const equipment = await getEquipment();
+  const settings = await getSettings() || {}; // Récupère la conf ou un objet vide par défaut
 
-  // On trie le matériel par catégorie pour le ranger dans les bonnes colonnes
+  // On trie le matériel par catégorie
   const cameras = equipment.filter((eq: any) => eq.category === 'Caméras');
   const optics = equipment.filter((eq: any) => eq.category === 'Optiques');
   const lights = equipment.filter((eq: any) => eq.category === 'Lumière / Machinerie');
 
   return (
     <div className="flex flex-col w-full -mt-32">
-      {/* 1. HERO SECTION */}
+      {/* 1. HERO SECTION (Dynamique) */}
       <section className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
-        <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#111] text-gray-700 font-mono text-sm border-b border-gray-900">
-          [Vidéo Bande Démo (Autoplay / Loop / Muted) en Background]
-        </div>
+        {settings.home_video_url ? (
+          <video 
+            src={settings.home_video_url} 
+            autoPlay loop muted playsInline 
+            className="absolute inset-0 w-full h-full object-cover z-0 opacity-60" 
+          />
+        ) : (
+          <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#111] text-gray-700 font-mono text-sm border-b border-gray-900">
+            [Ajouter la vidéo dans l'administration]
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/40 z-10"></div>
         <div className="relative z-20 text-center px-4 flex flex-col items-center mt-16">
           <h1 className="text-5xl md:text-8xl font-bold uppercase tracking-widest text-white drop-shadow-2xl mb-6">
@@ -54,42 +67,37 @@ export default async function Home() {
 
       <div className="max-w-7xl mx-auto w-full px-6 md:px-12">
         
-        {/* 2. SECTION PRÉSENTATION (Histoire & Vision) */}
+        {/* 2. SECTION PRÉSENTATION (Dynamique) */}
         <section className="py-24 border-b border-gray-900 grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-5 relative">
-            <div className="sticky top-32 w-full aspect-[4/5] bg-[#111] border border-gray-800 rounded-sm flex items-center justify-center text-gray-600 font-mono text-sm">
-              [Photo_Portrait_Thibaud.jpg]
+            <div className="sticky top-32 w-full aspect-[4/5] bg-[#111] border border-gray-800 rounded-sm flex items-center justify-center overflow-hidden">
+              {settings.profile_photo_url ? (
+                <img src={settings.profile_photo_url} alt="Thibaud Saliou" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-gray-600 font-mono text-sm">[Photo_Portrait_Thibaud.jpg]</span>
+              )}
             </div>
           </div>
           
           <div className="md:col-span-7 space-y-16 text-gray-300 leading-relaxed text-lg font-light">
             <div>
               <h3 className="text-2xl font-bold text-white uppercase tracking-wider mb-6">Mon histoire & ma vision</h3>
-              <div className="space-y-4">
-                <p>Mon histoire avec l’image a commencé à 13 ans, lorsque je reçois mon premier caméscope à mon anniversaire, déjà fasciné par la puissance de la narration visuelle des films de Zack Snyder. C’est durant mes études de cinéma à l’Université Rennes 2 que mon regard s’est affûté, entre la rigueur documentaire de Wang Bing et Pedro Costa à l’esthétique macabre et stylisée de Dario Argento.</p>
-                <p className="font-medium text-white italic">De ces univers très différents, j’en ai tiré une conclusion : une image doit être puissante.</p>
-                <p>Qu'il s'agisse de sublimer le quotidien dans une approche naturaliste ou de plonger dans un univers sombre et organique, je cherche sans cesse l'expressivité des visages et la vérité d'un regard. Mon travail sur la lumière et le cadrage n'a qu'un but : produire de l’émotion et remplacer ce que les mots ne pourront jamais dire.</p>
+              <div className="space-y-4 whitespace-pre-line">
+                {settings.history_text || "Texte à remplir dans l'administration."}
               </div>
             </div>
 
             <div>
               <h3 className="text-2xl font-bold text-white uppercase tracking-wider mb-6">Une expertise technique au service de votre univers</h3>
-              <div className="space-y-4">
-                <p>Mon précédent double parcours de photographe et d'assistant caméra m’a apporté la rigueur, la maîtrise technique mais surtout le regard nécessaire à la création d’émotions. Aujourd'hui, installé à Rennes et exerçant en freelance, je mets cette double exigence — artistique et technique — au service de vos projets en tant que réalisateur, directeur de la photographie et étalonneur.</p>
-                <p>Équipé de mon propre matériel professionnel, je me déplace partout en Bretagne et je prends en charge la chaîne image de A à Z pour garantir une identité visuelle forte, cohérente et maîtrisée.</p>
+              <div className="space-y-4 whitespace-pre-line">
+                {settings.expertise_text || "Texte à remplir dans l'administration."}
               </div>
             </div>
 
             <div className="bg-[#0f0f0f] p-8 border border-gray-900 rounded-sm">
               <h3 className="text-2xl font-bold text-white uppercase tracking-wider mb-6">Réalisation de clips</h3>
-              <div className="space-y-4 mb-8">
-                <p>Étant passionné de musique et d’images, le clip musical est aujourd’hui le cœur de ma création. C'est le terrain idéal pour fusionner ma vision cinématographique avec l'identité d'un morceau, quel que soit son genre musical.</p>
-                <p>Vous êtes un·e artiste, un groupe ou un label et vous cherchez une production visuelle affirmée pour votre musique ? Je vous accompagne de l'écriture du concept jusqu'à l'étalonnage final :</p>
-                <ul className="list-disc list-inside text-gray-400 marker:text-white space-y-2 ml-2">
-                  <li>Conception & Réalisation sur-mesure</li>
-                  <li>Direction de la photographie & Étalonnage</li>
-                  <li>Devis personnalisés selon vos ambitions et vos budgets de production</li>
-                </ul>
+              <div className="space-y-4 mb-8 whitespace-pre-line">
+                {settings.clips_text || "Texte à remplir dans l'administration."}
               </div>
               <Link href="/devis" className="inline-block w-full text-center md:w-auto bg-white text-black font-bold uppercase tracking-widest px-8 py-4 hover:bg-gray-300 transition-colors">
                 📩 Me contacter pour votre projet
