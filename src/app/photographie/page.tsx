@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 
 export default function Photographie() {
   const [photos, setPhotos] = useState<any[]>([]);
-  const [mainFilter, setMainFilter] = useState('all');
+  const [mainFilter, setMainFilter] = useState('tournage'); // L'onglet par défaut devient "tournage" (puisqu'il n'y a plus de "all")
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,15 +20,18 @@ export default function Photographie() {
     fetchPhotos();
   }, []);
 
+  // 1. LA LIGNE MANQUANTE : On filtre les photos selon l'onglet actif
+  const filteredByMain = photos.filter(photo => photo.category === mainFilter);
+
   // 2. On regroupe les photos par sous-catégorie (ex: "Bulgarie")
-  const groupedPhotos = filteredByMain.reduce((acc, photo) => {
+  const groupedPhotos = filteredByMain.reduce((acc: any, photo) => {
     const sub = photo.subcategory && photo.subcategory.trim() !== '' ? photo.subcategory : 'Autres';
     if (!acc[sub]) acc[sub] = [];
     acc[sub].push(photo);
     return acc;
   }, {});
 
-  // On trie pour que la section "Autres" (sans sous-catégorie) apparaisse à la fin
+  // 3. On trie pour que la section "Autres" (sans sous-catégorie) apparaisse à la fin
   const sortedSubcategories = Object.keys(groupedPhotos).sort((a, b) => {
     if (a === 'Autres') return 1;
     if (b === 'Autres') return -1;
@@ -74,14 +77,14 @@ export default function Photographie() {
         <div className="space-y-24">
           {sortedSubcategories.map((sub) => (
             <div key={sub}>
-              {/* Le titre de la sous-catégorie (caché si c'est "Autres" et qu'on n'en veut pas forcément) */}
+              {/* Le titre de la sous-catégorie (caché si c'est "Autres") */}
               {sub !== 'Autres' && (
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-widest text-white mb-8 border-b border-gray-900 pb-4 inline-block">
                   {sub}
                 </h2>
               )}
               
-              {/* Affichage Masonry (Colonnes qui respectent le format d'image) */}
+              {/* Affichage Masonry */}
               <div className="columns-1 sm:columns-2 md:columns-3 gap-6">
                 {groupedPhotos[sub].map((photo: any) => (
                   <div key={photo.id} className="mb-6 break-inside-avoid bg-[#111] border border-gray-900 group cursor-pointer relative overflow-hidden">
