@@ -25,17 +25,27 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     .filter((p: any) => p.id !== project.id)
     .slice(0, 2);
 
+  // Amélioration de l'URL vidéo pour s'assurer que l'intégration (embed) marche avec tous les liens YouTube
+  let embedUrl = project.videoUrl;
+  if (embedUrl?.includes("youtu.be/")) {
+    embedUrl = embedUrl.replace("youtu.be/", "youtube.com/embed/");
+  } else if (embedUrl?.includes("watch?v=")) {
+    embedUrl = embedUrl.replace("watch?v=", "embed/");
+  }
+
   return (
     <div className="max-w-5xl mx-auto pt-24 px-6 pb-24">
       <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-widest text-white mb-8">{project.title}</h1>
       
-      <div className="aspect-video w-full bg-[#111] border border-gray-900 mb-12">
-        <iframe 
-          src={project.videoUrl?.replace("watch?v=", "embed/")} 
-          className="w-full h-full" 
-          allowFullScreen 
-        />
-      </div>
+      {embedUrl && (
+        <div className="aspect-video w-full bg-[#111] border border-gray-900 mb-12">
+          <iframe 
+            src={embedUrl} 
+            className="w-full h-full" 
+            allowFullScreen 
+          />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-12">
         <div className="md:col-span-2 space-y-8 text-gray-400 text-sm leading-relaxed">
@@ -50,6 +60,23 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           <p><span className="text-white">Rôle</span><br/>{project.role}</p>
         </div>
       </div>
+
+      {/* NOUVEAU : SECTION STILLS / GALERIE */}
+      {project.stills && project.stills.length > 0 && (
+        <div className="mt-16 border-t border-gray-900 pt-12">
+          <h3 className="text-white uppercase tracking-widest text-xs font-bold mb-8">Galerie / Stills</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {project.stills.map((imgUrl: string, index: number) => (
+              <img 
+                key={index} 
+                src={imgUrl} 
+                alt={`${project.title} - Image${index + 1}`} 
+                className="w-full h-auto border border-gray-800 object-cover" 
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {recommendations.length > 0 && (
         <div className="mt-24 border-t border-gray-900 pt-12">
