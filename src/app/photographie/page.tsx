@@ -20,11 +20,6 @@ export default function Photographie() {
     fetchPhotos();
   }, []);
 
-  // 1. On filtre par catégorie principale (Tournage, Voyages, etc.)
-  const filteredByMain = mainFilter === 'all' 
-    ? photos 
-    : photos.filter(p => p.category === mainFilter);
-
   // 2. On regroupe les photos par sous-catégorie (ex: "Bulgarie")
   const groupedPhotos = filteredByMain.reduce((acc, photo) => {
     const sub = photo.subcategory && photo.subcategory.trim() !== '' ? photo.subcategory : 'Autres';
@@ -49,7 +44,6 @@ export default function Photographie() {
       {/* Boutons Principaux */}
       <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-16">
         {[
-          { id: 'all', label: 'Tout' },
           { id: 'tournage', label: 'Tournage' },
           { id: 'voyages', label: 'Voyages' },
           { id: 'portrait', label: 'Portrait' }
