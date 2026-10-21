@@ -11,8 +11,10 @@ export default function AdminPage() {
   const defaultPhoto = { title: "", category: "voyages", subcategory: "", imageUrl: "", order: 0 };
   const defaultReview = { text: "", author: "", order: 0 };
   const defaultEquipment = { category: "Caméras", name: "", order: 0 };
-  // Ajout des nouveaux champs par défaut
+  
   const defaultSettings = { 
+    contact_email: "thibaud.saliou@gmail.com", home_subtitle: "Basé à Rennes, se déplace en France", video_opacity: "60", 
+    prix_image_url: "", demo_reel_image_url: "", demo_reel_link: "", photo_categories_order: "",
     home_video_url: "", profile_photo_url: "", history_text: "", expertise_text: "", clips_text: "", 
     youtube_url: "", linkedin_url: "", malt_url: "", instagram_url: "", vimeo_url: "",
     devis_text: "", mentions_legales_text: "", rgpd_text: "" 
@@ -35,7 +37,7 @@ export default function AdminPage() {
       if (res.ok) {
         const data = await res.json();
         if (type === 'settings') {
-          setSettingsData(Array.isArray(data) ? data[0] || defaultSettings : data || defaultSettings);
+          setSettingsData(Array.isArray(data) ? { ...defaultSettings, ...data[0] } : { ...defaultSettings, ...data });
         } else {
           setItemsList(data);
         }
@@ -114,19 +116,30 @@ export default function AdminPage() {
 
       <div className={`grid ${activeTab === 'settings' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-12`}>
         
-        {/* NOUVEAU FORMULAIRE DE CONFIGURATION (Complet avec les pages légales) */}
         {activeTab === "settings" && (
           <form onSubmit={(e) => handleSubmit(e, 'settings')} className="space-y-6 bg-[#111] p-6 border border-gray-900 w-full max-w-4xl mx-auto">
+             
              <div className="border-b border-gray-800 pb-2 mb-4">
                <h2 className="text-xl font-bold uppercase text-white">1. Médias & Textes Accueil</h2>
              </div>
-             
              <div className="grid md:grid-cols-2 gap-4">
                <div><label className="text-xs uppercase text-gray-500 block mb-1">URL Vidéo Accueil</label>
                <input type="url" value={settingsData.home_video_url || ''} onChange={e => setSettingsData({...settingsData, home_video_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-               <div><label className="text-xs uppercase text-gray-500 block mb-1">URL Photo Profil</label>
-               <input type="url" value={settingsData.profile_photo_url || ''} onChange={e => setSettingsData({...settingsData, profile_photo_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
+               <div><label className="text-xs uppercase text-gray-500 block mb-1">Opacité Vidéo (0 à 100)</label>
+               <input type="number" min="0" max="100" value={settingsData.video_opacity || ''} onChange={e => setSettingsData({...settingsData, video_opacity: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
+               <div className="md:col-span-2"><label className="text-xs uppercase text-gray-500 block mb-1">Sous-titre (ex: Basé à Rennes...)</label>
+               <input type="text" value={settingsData.home_subtitle || ''} onChange={e => setSettingsData({...settingsData, home_subtitle: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
              </div>
+
+             <div className="grid md:grid-cols-2 gap-4 mt-4">
+               <div><label className="text-xs uppercase text-blue-400 block mb-1">URL Image Bande Démo</label>
+               <input type="url" value={settingsData.demo_reel_image_url || ''} onChange={e => setSettingsData({...settingsData, demo_reel_image_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
+               <div><label className="text-xs uppercase text-blue-400 block mb-1">Lien de la Bande Démo</label>
+               <input type="url" value={settingsData.demo_reel_link || ''} onChange={e => setSettingsData({...settingsData, demo_reel_link: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
+             </div>
+
+             <div className="mt-4"><label className="text-xs uppercase text-gray-500 block mb-1">URL Photo Profil</label>
+             <input type="url" value={settingsData.profile_photo_url || ''} onChange={e => setSettingsData({...settingsData, profile_photo_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
              
              <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte : Mon histoire & ma vision</label>
              <textarea rows={4} value={settingsData.history_text || ''} onChange={e => setSettingsData({...settingsData, history_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
@@ -134,10 +147,14 @@ export default function AdminPage() {
              <textarea rows={4} value={settingsData.expertise_text || ''} onChange={e => setSettingsData({...settingsData, expertise_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
              <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte : Réalisation de clips</label>
              <textarea rows={4} value={settingsData.clips_text || ''} onChange={e => setSettingsData({...settingsData, clips_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
+             
+             <div><label className="text-xs uppercase text-blue-400 block mb-1">URL Image : Sélections & Prix</label>
+             <input type="url" value={settingsData.prix_image_url || ''} onChange={e => setSettingsData({...settingsData, prix_image_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
 
              <div className="border-b border-t border-gray-800 py-4 mt-8 mb-4">
                <h2 className="text-xl font-bold uppercase text-white mb-4">2. Réseaux Sociaux & Contact</h2>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div><label className="text-xs uppercase text-green-400 block mb-1">Email de Contact</label><input type="email" value={settingsData.contact_email || ''} onChange={e => setSettingsData({...settingsData, contact_email: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
                  <div><label className="text-xs uppercase text-gray-500 block mb-1">Instagram URL</label><input type="url" value={settingsData.instagram_url || ''} onChange={e => setSettingsData({...settingsData, instagram_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
                  <div><label className="text-xs uppercase text-gray-500 block mb-1">Vimeo URL</label><input type="url" value={settingsData.vimeo_url || ''} onChange={e => setSettingsData({...settingsData, vimeo_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
                  <div><label className="text-xs uppercase text-gray-500 block mb-1">YouTube URL</label><input type="url" value={settingsData.youtube_url || ''} onChange={e => setSettingsData({...settingsData, youtube_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
@@ -147,23 +164,25 @@ export default function AdminPage() {
              </div>
 
              <div className="border-b border-gray-800 pb-2 mb-4 mt-8">
-               <h2 className="text-xl font-bold uppercase text-white">3. Pages Spéciales (Devis, Mentions, RGPD)</h2>
+               <h2 className="text-xl font-bold uppercase text-white">3. Pages Spéciales & Tri</h2>
              </div>
+
+             <div><label className="text-xs uppercase text-blue-400 block mb-1">Ordre des catégories Photo (Séparer par des virgules)</label>
+             <input type="text" placeholder="ex: Voyages, Tournage, Bulgarie..." value={settingsData.photo_categories_order || ''} onChange={e => setSettingsData({...settingsData, photo_categories_order: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
 
              <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte d'introduction de la page Devis</label>
              <textarea rows={4} value={settingsData.devis_text || ''} onChange={e => setSettingsData({...settingsData, devis_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
              
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Mentions Légales (Pleine page)</label>
-             <textarea rows={10} value={settingsData.mentions_legales_text || ''} onChange={e => setSettingsData({...settingsData, mentions_legales_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
+             <div><label className="text-xs uppercase text-gray-500 block mb-1">Mentions Légales</label>
+             <textarea rows={6} value={settingsData.mentions_legales_text || ''} onChange={e => setSettingsData({...settingsData, mentions_legales_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
 
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Politique de Confidentialité / RGPD (Pleine page)</label>
-             <textarea rows={10} value={settingsData.rgpd_text || ''} onChange={e => setSettingsData({...settingsData, rgpd_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
+             <div><label className="text-xs uppercase text-gray-500 block mb-1">Politique de Confidentialité (RGPD)</label>
+             <textarea rows={6} value={settingsData.rgpd_text || ''} onChange={e => setSettingsData({...settingsData, rgpd_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
              
             <button type="submit" className="w-full bg-white text-black font-bold uppercase py-4 mt-8 hover:bg-gray-300">Sauvegarder toute la configuration</button>
           </form>
         )}
 
-        {/* COLONNE GAUCHE (AUTRES FORMULAIRES) */}
         {activeTab !== "settings" && (
           <div>
             {activeTab === "projects" && (

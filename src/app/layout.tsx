@@ -3,10 +3,10 @@ import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Thibaud Saliou - Réalisateur & Chef Opérateur',
-  description: 'Portfolio de Thibaud Saliou, Réalisateur et Chef Opérateur.',
-};
+export const metadata = {
+  title: 'Thibaud SALIOU | Réalisateur, Chef Opérateur, Rennes, Bretagne',
+  description: 'Portfolio de Thibaud Saliou, réalisateur et directeur de la photographie basé à Rennes, Bretagne.',
+}
 
 export default function RootLayout({
   children,

@@ -6,8 +6,8 @@ export default function Navbar() {
       
       {/* 1. GAUCHE : Liens (Alignés au début) */}
       <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-6 text-[10px] md:text-xs font-medium tracking-widest uppercase justify-self-start">
-        <Link href="/realisation" className="nav-link">Réalisation</Link>
         <Link href="/directeur-photo" className="nav-link">Dir. Photo</Link>
+        <Link href="/realisation" className="nav-link">Réalisation</Link>
         <Link href="/clips" className="nav-link">Clips</Link>
         <Link href="/photographie" className="nav-link">Photographie</Link>
       </div>
