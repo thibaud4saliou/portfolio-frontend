@@ -93,17 +93,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 3. SECTION PRIX / SÉLECTIONS */}
-        <section className="py-24 border-b border-gray-900 flex justify-center">
-          {settings.prix_image_url ? (
-            <img src={settings.prix_image_url} alt="Sélections et Prix" className="max-w-full h-auto opacity-80 hover:opacity-100 transition-opacity" />
-          ) : (
-            <div className="text-gray-600 font-mono text-sm border border-gray-800 border-dashed p-8 text-center w-full">
-              [Ajouter l'image des prix dans l'administration]
-            </div>
-          )}
-        </section>
-
         {/* 4. SECTION CARROUSEL D'AVIS */}
         <section className="py-24 border-b border-gray-900">
           <h2 className="text-sm text-gray-400 font-bold tracking-[0.3em] uppercase mb-16 text-center">/ Ils m’ont fait confiance</h2>

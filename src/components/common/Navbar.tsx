@@ -9,7 +9,6 @@ export default function Navbar() {
         <Link href="/directeur-photo" className="nav-link">Dir. Photo</Link>
         <Link href="/realisation" className="nav-link">Réalisation</Link>
         <Link href="/clips" className="nav-link">Clips</Link>
-        <Link href="/photographie" className="nav-link">Photographie</Link>
       </div>
       
       {/* 2. CENTRE : Logo (Toujours au milieu) */}
