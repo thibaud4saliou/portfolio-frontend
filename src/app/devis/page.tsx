@@ -42,7 +42,7 @@ export default function DevisContact() {
 
           <div>
             <h3 className="text-xs text-gray-500 font-bold tracking-[0.2em] uppercase mb-4">Contact Direct</h3>
-            <a href="mailto:contact@thibaudsaliou.com" className="text-xl text-white hover:text-gray-400 transition-colors">
+            <a href="mailto:thibaud.saliou@gmail.com" className="text-xl text-white hover:text-gray-400 transition-colors">
               thibaud.saliou@gmail.com
             </a>
           </div>
