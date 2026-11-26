@@ -24,7 +24,7 @@ export default async function Home() {
   );
 
   return (
-    <div className="flex flex-col w-full -mt-32">
+    <div className="flex flex-col w-full -mt-44 md:-mt-32">
       {/* 1. HERO */}
       <section className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
         {videoUrl && (
@@ -70,7 +70,7 @@ export default async function Home() {
 
       <div className="max-w-7xl mx-auto w-full px-6 md:px-12">
         {/* 2. PRÉSENTATION */}
-        <section id="a-propos" className="py-24 border-b border-gray-900 grid grid-cols-1 md:grid-cols-12 gap-12 scroll-mt-32">
+        <section id="a-propos" className="py-24 border-b border-gray-900 grid grid-cols-1 md:grid-cols-12 gap-12 scroll-mt-44 md:scroll-mt-32">
           <div className="md:col-span-5 relative">
             <div className="sticky top-32 w-full aspect-[4/5] bg-[#111] border border-gray-800 rounded-sm overflow-hidden">
               {profilePhoto && (

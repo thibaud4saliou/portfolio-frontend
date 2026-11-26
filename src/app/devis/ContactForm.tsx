@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const EMPTY = { name: '', email: '', type: 'clip', message: '', website: '' };
 type Status = { kind: 'idle' | 'sending' | 'success' | 'error'; message?: string };
@@ -12,6 +12,12 @@ const inputClass =
 export default function ContactForm() {
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [slow, setSlow] = useState(false);
+
+  // Réveille le serveur (Render gratuit s'endort) pendant que le visiteur écrit.
+  useEffect(() => {
+    fetch('/api/health', { cache: 'no-store' }).catch(() => undefined);
+  }, []);
 
   const set = (key: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm({ ...form, [key]: e.target.value });
@@ -19,12 +25,14 @@ export default function ContactForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus({ kind: 'sending' });
+    const slowTimer = setTimeout(() => setSlow(true), 5000);
     try {
       // URL relative : passe par nginx, fonctionne quel que soit le domaine.
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
+        signal: AbortSignal.timeout(90_000),
       });
       if (res.ok) {
         setStatus({ kind: 'success', message: 'Votre demande a bien été envoyée. Je reviens vers vous très vite !' });
@@ -40,7 +48,13 @@ export default function ContactForm() {
             : "L'envoi a échoué. Vous pouvez m'écrire directement par email.";
       setStatus({ kind: 'error', message });
     } catch {
-      setStatus({ kind: 'error', message: 'Impossible de joindre le serveur. Réessayez plus tard.' });
+      setStatus({
+        kind: 'error',
+        message: "Le serveur ne répond pas. Réessayez dans un instant ou écrivez-moi directement par email.",
+      });
+    } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
     }
   }
 
@@ -85,7 +99,7 @@ export default function ContactForm() {
         disabled={status.kind === 'sending'}
         className="w-full bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-300 transition-colors disabled:opacity-50"
       >
-        {status.kind === 'sending' ? 'Envoi en cours…' : 'Envoyer la demande'}
+        {status.kind === 'sending' ? (slow ? 'Encore quelques secondes…' : 'Envoi en cours…') : 'Envoyer la demande'}
       </button>
 
       <p role="status" aria-live="polite" className={`text-center text-sm font-bold ${status.kind === 'success' ? 'text-green-500' : 'text-red-400'}`}>

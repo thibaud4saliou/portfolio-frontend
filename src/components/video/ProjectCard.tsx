@@ -29,11 +29,13 @@ export default function ProjectCard({ id, title, role, coverImageUrl, priority =
           </div>
         )}
       </div>
-      <div className="flex justify-between items-baseline gap-4">
-        <h3 className="text-xl font-bold uppercase tracking-wider text-gray-300 group-hover:text-white transition-colors">
+      {/* Titre puis rôle en dessous : un rôle long (« Réalisateur, Scénariste, … »)
+          ne peut plus déborder sur la carte voisine. */}
+      <div className="min-w-0">
+        <h3 className="text-xl font-bold uppercase tracking-wider text-gray-300 group-hover:text-white transition-colors break-words">
           {title}
         </h3>
-        <p className="text-xs uppercase tracking-widest text-gray-500 shrink-0">{role}</p>
+        <p className="mt-2 text-xs uppercase tracking-widest text-gray-500 leading-relaxed break-words">{role}</p>
       </div>
     </Link>
   );
