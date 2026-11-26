@@ -36,6 +36,13 @@ export function checkFile(file: { type: string; size: number; name?: string }, k
   return null;
 }
 
+/** Texte d'aide affiché au-dessus des champs téléversables. */
+export function uploadHint(kind: UploadKind): string {
+  if (kind === 'image') return `JPG, PNG, WebP, AVIF ou GIF · ${formatBytes(MAX_IMAGE_BYTES)} max`;
+  if (kind === 'video') return `MP4 ou WebM · ${formatBytes(MAX_VIDEO_BYTES)} max`;
+  return `Image (${formatBytes(MAX_IMAGE_BYTES)} max) ou vidéo MP4/WebM (${formatBytes(MAX_VIDEO_BYTES)} max)`;
+}
+
 /** Ajoute des URL à une liste "une URL par ligne" sans doublons. */
 export function appendUrls(current: string, urls: string[]): string {
   const existing = current

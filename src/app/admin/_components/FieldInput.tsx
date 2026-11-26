@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { FieldDef } from '@/lib/adminForm';
-import { acceptFor, appendUrls, checkFile } from '@/lib/upload';
+import { acceptFor, appendUrls, checkFile, uploadHint } from '@/lib/upload';
 import { safeHref } from '@/lib/url';
 import { UnauthorizedError } from './adminApi';
 import { uploadFile } from './uploadClient';
@@ -89,6 +89,7 @@ export default function FieldInput({
         {def.label}
         {def.required && ' *'}
       </label>
+      {def.upload && <p className="text-[11px] text-gray-600 -mt-0.5 mb-1">{uploadHint(def.upload)}</p>}
 
       <div className="flex gap-2 items-start">
         <div className="flex-1">{control}</div>

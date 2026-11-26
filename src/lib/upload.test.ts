@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptFor, appendUrls, checkFile, formatBytes, MAX_IMAGE_BYTES } from './upload';
+import { acceptFor, appendUrls, checkFile, formatBytes, MAX_IMAGE_BYTES, uploadHint } from './upload';
 
 describe('acceptFor', () => {
   it('liste les types acceptés', () => {
@@ -43,5 +43,13 @@ describe('appendUrls', () => {
   it('ajoute sans doublons', () => {
     expect(appendUrls('', ['a'])).toBe('a');
     expect(appendUrls('a, b\n', ['b', 'c'])).toBe('a\nb\nc');
+  });
+});
+
+describe('uploadHint', () => {
+  it('indique formats et tailles max', () => {
+    expect(uploadHint('image')).toBe('JPG, PNG, WebP, AVIF ou GIF · 15 Mo max');
+    expect(uploadHint('video')).toBe('MP4 ou WebM · 300 Mo max');
+    expect(uploadHint('media')).toContain('300 Mo');
   });
 });
