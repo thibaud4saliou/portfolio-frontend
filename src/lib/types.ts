@@ -36,7 +36,6 @@ export interface Settings {
   history_text?: string | null;
   expertise_text?: string | null;
   clips_text?: string | null;
-  awards_image_url?: string | null;
   demo_reel_image_url?: string | null;
   demo_reel_link?: string | null;
   youtube_url?: string | null;

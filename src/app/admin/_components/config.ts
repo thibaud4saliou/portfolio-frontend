@@ -96,7 +96,6 @@ export const SETTINGS_SECTIONS: readonly { title: string; fields: readonly Field
       { name: 'history_text', label: 'Texte : Mon histoire & ma vision', type: 'textarea', rows: 5, wide: true },
       { name: 'expertise_text', label: 'Texte : Expertise technique', type: 'textarea', rows: 5, wide: true },
       { name: 'clips_text', label: 'Texte : Réalisation de clips', type: 'textarea', rows: 5, wide: true },
-      { name: 'awards_image_url', label: 'Image : Sélections & prix', type: 'url', wide: true, upload: 'image' },
     ],
   },
   {

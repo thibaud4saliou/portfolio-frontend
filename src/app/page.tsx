@@ -17,7 +17,6 @@ export default async function Home() {
   const demoImage = safeHref(settings.demo_reel_image_url);
   const demoLink = safeHref(settings.demo_reel_link);
   const profilePhoto = safeHref(settings.profile_photo_url);
-  const awardsImage = safeHref(settings.awards_image_url);
 
   const demo = demoImage && (
     // eslint-disable-next-line @next/next/no-img-element
@@ -95,14 +94,6 @@ export default async function Home() {
                   Une expertise technique au service de votre univers
                 </h2>
                 <div className="space-y-4 whitespace-pre-line">{settings.expertise_text}</div>
-              </div>
-            )}
-
-            {awardsImage && (
-              <div>
-                <h2 className="text-2xl font-bold text-white uppercase tracking-wider mb-6">Sélections & prix</h2>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={awardsImage} alt="Sélections et prix en festivals" loading="lazy" decoding="async" className="w-full h-auto" />
               </div>
             )}
 
