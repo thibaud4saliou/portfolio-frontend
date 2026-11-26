@@ -36,8 +36,16 @@ export default function ItemsManager({
   // Le composant est recréé à chaque changement d'onglet (prop key) :
   // pas besoin de réinitialiser le formulaire ici.
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+    adminRequest<Item[]>('GET', endpoint)
+      .then((res) => {
+        if (active && res.ok) setItems(res.data as Item[]);
+      })
+      .catch(onError);
+    return () => {
+      active = false;
+    };
+  }, [endpoint, onError]);
 
   function startEdit(item: Item) {
     setEditingId(item.id);

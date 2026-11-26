@@ -52,9 +52,18 @@ export default function ContactRequestsPanel({
     }
   }, [onError]);
 
+  // Chargement initial : l'état est mis à jour dans le callback (règle React 19).
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+    adminRequest<ContactRequest[]>('GET', '/api/contact-requests')
+      .then((res) => {
+        if (active && res.ok) setItems(res.data as ContactRequest[]);
+      })
+      .catch(onError);
+    return () => {
+      active = false;
+    };
+  }, [onError]);
 
   useEffect(() => {
     if (items) onNewCount(items.filter((i) => i.status === 'new').length);

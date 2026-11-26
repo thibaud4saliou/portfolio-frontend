@@ -27,8 +27,18 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    checkSession();
-  }, [checkSession]);
+    let active = true;
+    adminRequest<{ authenticated: boolean }>('GET', '/api/auth/session')
+      .then((res) => {
+        if (active) setAuth(res.ok && res.data.authenticated ? 'in' : 'out');
+      })
+      .catch(() => {
+        if (active) setAuth('offline');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Compteur de nouvelles demandes, visible quel que soit l'onglet ouvert.
   useEffect(() => {
