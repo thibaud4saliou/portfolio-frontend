@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className="relative min-h-screen flex flex-col">
         <Navbar />
-        <main className="pt-32 pb-12 px-6 md:px-12 flex-grow">{children}</main>
+        <main className="pt-44 md:pt-32 pb-12 px-6 md:px-12 flex-grow">{children}</main>
         <Footer />
       </body>
     </html>
