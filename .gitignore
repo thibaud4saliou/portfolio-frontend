@@ -1,7 +1,9 @@
 node_modules
 .next
+coverage
 .DS_Store
 ._*
 .env
-.env.local
-
+.env.*
+!.env.example
+*.tsbuildinfo

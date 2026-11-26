@@ -1,314 +1,137 @@
-"use client";
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { adminRequest, UnauthorizedError } from './_components/adminApi';
+import { COLLECTIONS } from './_components/config';
+import ContactRequestsPanel from './_components/ContactRequestsPanel';
+import ItemsManager from './_components/ItemsManager';
+import LoginForm from './_components/LoginForm';
+import SettingsForm from './_components/SettingsForm';
+
+type Tab = 'requests' | (typeof COLLECTIONS)[number]['key'] | 'settings';
+type AuthState = 'checking' | 'out' | 'in' | 'offline';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("projects");
-  const [status, setStatus] = useState("");
-  const [itemsList, setItemsList] = useState<any[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [auth, setAuth] = useState<AuthState>('checking');
+  const [tab, setTab] = useState<Tab>('requests');
+  const [status, setStatus] = useState('');
+  const [newRequests, setNewRequests] = useState(0);
 
-  const defaultProject = { title: "", category: "clip", role: "", year: "", synopsis: "", videoUrl: "", coverImageUrl: "", order: 0, credits: "", stills: "" };
-  const defaultPhoto = { title: "", category: "voyages", subcategory: "", imageUrl: "", order: 0 };
-  const defaultReview = { text: "", author: "", order: 0 };
-  const defaultEquipment = { category: "Caméras", name: "", order: 0 };
-  
-  const defaultSettings = { 
-    contact_email: "thibaud.saliou@gmail.com", home_subtitle: "Basé à Rennes, se déplace en France", video_opacity: "60", 
-    prix_image_url: "", demo_reel_image_url: "", demo_reel_link: "", photo_categories_order: "",
-    home_video_url: "", profile_photo_url: "", history_text: "", expertise_text: "", clips_text: "", 
-    youtube_url: "", linkedin_url: "", malt_url: "", instagram_url: "", vimeo_url: "",
-    devis_text: "", mentions_legales_text: "", rgpd_text: "" 
-  };
-
-  const [projectData, setProjectData] = useState(defaultProject);
-  const [photoData, setPhotoData] = useState(defaultPhoto);
-  const [reviewData, setReviewData] = useState(defaultReview);
-  const [equipmentData, setEquipmentData] = useState(defaultEquipment);
-  const [settingsData, setSettingsData] = useState(defaultSettings);
+  const checkSession = useCallback(async () => {
+    try {
+      const res = await adminRequest<{ authenticated: boolean }>('GET', '/api/auth/session');
+      setAuth(res.ok && res.data.authenticated ? 'in' : 'out');
+    } catch {
+      setAuth('offline');
+    }
+  }, []);
 
   useEffect(() => {
-    fetchItems(activeTab);
-    cancelEdit();
-  }, [activeTab]);
+    let active = true;
+    adminRequest<{ authenticated: boolean }>('GET', '/api/auth/session')
+      .then((res) => {
+        if (active) setAuth(res.ok && res.data.authenticated ? 'in' : 'out');
+      })
+      .catch(() => {
+        if (active) setAuth('offline');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const fetchItems = async (type: string) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${type}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (type === 'settings') {
-          setSettingsData(Array.isArray(data) ? { ...defaultSettings, ...data[0] } : { ...defaultSettings, ...data });
-        } else {
-          setItemsList(data);
-        }
-      }
-    } catch (error) { console.error("Erreur", error); }
-  };
+  // Compteur de nouvelles demandes, visible quel que soit l'onglet ouvert.
+  useEffect(() => {
+    if (auth !== 'in') return;
+    adminRequest<{ status: string }[]>('GET', '/api/contact-requests')
+      .then((res) => res.ok && setNewRequests((res.data as { status: string }[]).filter((r) => r.status === 'new').length))
+      .catch(() => undefined);
+  }, [auth]);
 
-  const handleSubmit = async (e: React.FormEvent, type: string) => {
-    e.preventDefault();
-    setStatus("Enregistrement...");
-
-    let bodyData = {};
-    let method = editingId ? "PUT" : "POST";
-    let url = editingId ? `${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/${type}`;
-
-    if (type === "projects") {
-      const stillsArray = typeof projectData.stills === 'string' ? projectData.stills.split(',').map(s => s.trim()).filter(s => s !== "") : projectData.stills;
-      bodyData = { ...projectData, stills: stillsArray, order: Number(projectData.order) };
-    } else if (type === "photos") bodyData = { ...photoData, order: Number(photoData.order) };
-    else if (type === "reviews") bodyData = { ...reviewData, order: Number(reviewData.order) };
-    else if (type === "equipment") bodyData = { ...equipmentData, order: Number(equipmentData.order) };
-    else if (type === "settings") {
-      bodyData = settingsData;
-      method = "PUT";
-      url = `${process.env.NEXT_PUBLIC_API_URL}/api/settings/1`;
+  const handleError = useCallback((err: unknown) => {
+    if (err instanceof UnauthorizedError) {
+      setStatus('Session expirée, reconnectez-vous.');
+      setAuth('out');
+    } else {
+      setStatus('❌ Impossible de joindre le serveur');
     }
+  }, []);
 
-    try {
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) });
-      if (res.ok) {
-        setStatus(type === 'settings' ? "✅ Configuration sauvegardée !" : (editingId ? "✅ Modification sauvegardée !" : "✅ Ajouté avec succès !"));
-        if (type !== 'settings') cancelEdit();
-        fetchItems(type); 
-      } else setStatus("❌ Erreur serveur");
-    } catch (error) { setStatus("❌ Impossible de joindre le serveur"); }
-  };
+  async function logout() {
+    await adminRequest('POST', '/api/auth/logout').catch(() => undefined);
+    setStatus('');
+    setAuth('out');
+  }
 
-  const handleEdit = (item: any) => {
-    setEditingId(item.id);
-    if (activeTab === "projects") setProjectData({ ...item, stills: item.stills ? item.stills.join(', ') : "", synopsis: item.synopsis || "", credits: item.credits || "", coverImageUrl: item.coverImageUrl || "" });
-    if (activeTab === "photos") setPhotoData({ ...item, title: item.title || "", subcategory: item.subcategory || "" });
-    if (activeTab === "reviews") setReviewData(item);
-    if (activeTab === "equipment") setEquipmentData(item);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  if (auth === 'checking') return <p className="text-center text-gray-500 mt-16">Chargement…</p>;
+  if (auth === 'offline')
+    return (
+      <div className="text-center mt-16 space-y-4">
+        <p className="text-red-400">Impossible de joindre le serveur.</p>
+        <button onClick={checkSession} className="text-xs uppercase tracking-widest border border-gray-700 px-4 py-2 text-white">
+          Réessayer
+        </button>
+      </div>
+    );
+  if (auth === 'out')
+    return (
+      <>
+        {status && <p className="text-center text-sm text-gray-400 mt-8">{status}</p>}
+        <LoginForm
+          onSuccess={() => {
+            setStatus('');
+            setAuth('in');
+          }}
+        />
+      </>
+    );
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setProjectData(defaultProject);
-    setPhotoData(defaultPhoto);
-    setReviewData(defaultReview);
-    setEquipmentData(defaultEquipment);
-  };
-
-  const handleDelete = async (id: string, type: string) => {
-    if (!window.confirm("Supprimer définitivement ?")) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${type}/${id}`, { method: "DELETE" });
-    if (res.ok) fetchItems(type);
-  };
-
-  const existingSubcategories = Array.from(new Set(itemsList.filter(item => item.category === photoData.category && item.subcategory).map(item => item.subcategory)));
+  const collection = COLLECTIONS.find((c) => c.key === tab);
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'requests', label: newRequests > 0 ? `Demandes (${newRequests})` : 'Demandes' },
+    ...COLLECTIONS.map((c) => ({ key: c.key, label: c.label })),
+    { key: 'settings', label: 'Configuration' },
+  ];
 
   return (
-    <div className="max-w-5xl mx-auto pt-12 pb-24 px-6">
-      <h1 className="text-3xl font-bold uppercase tracking-wider mb-8 text-white text-center">Tableau de Bord</h1>
-      
-      <div className="flex flex-wrap gap-4 mb-8 justify-center border-b border-gray-200 pb-4">
-        {['projects', 'reviews', 'equipment', 'settings'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`text-xs uppercase tracking-widest px-4 py-2 ${activeTab === tab ? 'bg-white text-black font-bold' : 'text-gray-400 hover:text-white'}`}>
-            {tab === 'projects' ? 'Vidéos' : tab === 'photos' ? 'Photographie' : tab === 'reviews' ? 'Avis' : tab === 'equipment' ? 'Matériel' : 'Configuration'}
+    <div className="max-w-6xl mx-auto pt-12 pb-24">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold uppercase tracking-wider text-white">Tableau de bord</h1>
+        <button onClick={logout} className="text-xs uppercase tracking-widest text-gray-400 hover:text-white border border-gray-800 px-4 py-2">
+          Déconnexion
+        </button>
+      </div>
+
+      <div role="tablist" className="flex flex-wrap gap-4 mb-8 justify-center border-b border-gray-800 pb-4">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            onClick={() => {
+              setTab(t.key);
+              setStatus('');
+            }}
+            className={`text-xs uppercase tracking-widest px-4 py-2 ${tab === t.key ? 'bg-white text-black font-bold' : 'text-gray-400 hover:text-white'}`}
+          >
+            {t.label}
           </button>
         ))}
       </div>
 
-      {status && <p className="text-center mb-8 text-sm font-bold text-white bg-[#111] p-4 border border-gray-800">{status}</p>}
+      {status && (
+        <p role="status" className="text-center mb-8 text-sm font-bold text-white bg-[#111] p-4 border border-gray-800">
+          {status}
+        </p>
+      )}
 
-      <div className={`grid ${activeTab === 'settings' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-12`}>
-        
-        {activeTab === "settings" && (
-          <form onSubmit={(e) => handleSubmit(e, 'settings')} className="space-y-6 bg-[#111] p-6 border border-gray-900 w-full max-w-4xl mx-auto">
-             
-             <div className="border-b border-gray-800 pb-2 mb-4">
-               <h2 className="text-xl font-bold uppercase text-white">1. Médias & Textes Accueil</h2>
-             </div>
-             <div className="grid md:grid-cols-2 gap-4">
-               <div><label className="text-xs uppercase text-gray-500 block mb-1">URL Vidéo Accueil</label>
-               <input type="url" value={settingsData.home_video_url || ''} onChange={e => setSettingsData({...settingsData, home_video_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-               <div><label className="text-xs uppercase text-gray-500 block mb-1">Opacité Vidéo (0 à 100)</label>
-               <input type="number" min="0" max="100" value={settingsData.video_opacity || ''} onChange={e => setSettingsData({...settingsData, video_opacity: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-               <div className="md:col-span-2"><label className="text-xs uppercase text-gray-500 block mb-1">Sous-titre (ex: Basé à Rennes...)</label>
-               <input type="text" value={settingsData.home_subtitle || ''} onChange={e => setSettingsData({...settingsData, home_subtitle: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-             </div>
-
-             <div className="grid md:grid-cols-2 gap-4 mt-4">
-               <div><label className="text-xs uppercase text-blue-400 block mb-1">URL Image Bande Démo</label>
-               <input type="url" value={settingsData.demo_reel_image_url || ''} onChange={e => setSettingsData({...settingsData, demo_reel_image_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-               <div><label className="text-xs uppercase text-blue-400 block mb-1">Lien de la Bande Démo</label>
-               <input type="url" value={settingsData.demo_reel_link || ''} onChange={e => setSettingsData({...settingsData, demo_reel_link: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-             </div>
-
-             <div className="mt-4"><label className="text-xs uppercase text-gray-500 block mb-1">URL Photo Profil</label>
-             <input type="url" value={settingsData.profile_photo_url || ''} onChange={e => setSettingsData({...settingsData, profile_photo_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-             
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte : Mon histoire & ma vision</label>
-             <textarea rows={4} value={settingsData.history_text || ''} onChange={e => setSettingsData({...settingsData, history_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte : Expertise Technique</label>
-             <textarea rows={4} value={settingsData.expertise_text || ''} onChange={e => setSettingsData({...settingsData, expertise_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte : Réalisation de clips</label>
-             <textarea rows={4} value={settingsData.clips_text || ''} onChange={e => setSettingsData({...settingsData, clips_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-             
-             <div><label className="text-xs uppercase text-blue-400 block mb-1">URL Image : Sélections & Prix</label>
-             <input type="url" value={settingsData.prix_image_url || ''} onChange={e => setSettingsData({...settingsData, prix_image_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-
-             <div className="border-b border-t border-gray-800 py-4 mt-8 mb-4">
-               <h2 className="text-xl font-bold uppercase text-white mb-4">2. Réseaux Sociaux & Contact</h2>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div><label className="text-xs uppercase text-green-400 block mb-1">Email de Contact</label><input type="email" value={settingsData.contact_email || ''} onChange={e => setSettingsData({...settingsData, contact_email: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Instagram URL</label><input type="url" value={settingsData.instagram_url || ''} onChange={e => setSettingsData({...settingsData, instagram_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Vimeo URL</label><input type="url" value={settingsData.vimeo_url || ''} onChange={e => setSettingsData({...settingsData, vimeo_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">YouTube URL</label><input type="url" value={settingsData.youtube_url || ''} onChange={e => setSettingsData({...settingsData, youtube_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">LinkedIn URL</label><input type="url" value={settingsData.linkedin_url || ''} onChange={e => setSettingsData({...settingsData, linkedin_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Malt URL</label><input type="url" value={settingsData.malt_url || ''} onChange={e => setSettingsData({...settingsData, malt_url: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-               </div>
-             </div>
-
-             <div className="border-b border-gray-800 pb-2 mb-4 mt-8">
-               <h2 className="text-xl font-bold uppercase text-white">3. Pages Spéciales & Tri</h2>
-             </div>
-
-             <div><label className="text-xs uppercase text-blue-400 block mb-1">Ordre des catégories Photo (Séparer par des virgules)</label>
-             <input type="text" placeholder="ex: Voyages, Tournage, Bulgarie..." value={settingsData.photo_categories_order || ''} onChange={e => setSettingsData({...settingsData, photo_categories_order: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte d'introduction de la page Devis</label>
-             <textarea rows={4} value={settingsData.devis_text || ''} onChange={e => setSettingsData({...settingsData, devis_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-             
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Mentions Légales</label>
-             <textarea rows={6} value={settingsData.mentions_legales_text || ''} onChange={e => setSettingsData({...settingsData, mentions_legales_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
-
-             <div><label className="text-xs uppercase text-gray-500 block mb-1">Politique de Confidentialité (RGPD)</label>
-             <textarea rows={6} value={settingsData.rgpd_text || ''} onChange={e => setSettingsData({...settingsData, rgpd_text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3 font-mono text-sm"></textarea></div>
-             
-            <button type="submit" className="w-full bg-white text-black font-bold uppercase py-4 mt-8 hover:bg-gray-300">Sauvegarder toute la configuration</button>
-          </form>
-        )}
-
-        {activeTab !== "settings" && (
-          <div>
-            {activeTab === "projects" && (
-              <form onSubmit={(e) => handleSubmit(e, 'projects')} className="space-y-4 bg-[#111] p-6 border border-gray-900">
-                 <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                   <h2 className="text-xl font-bold uppercase text-white">{editingId ? 'Modifier Vidéo' : 'Ajouter Vidéo'}</h2>
-                   {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:text-white uppercase">Annuler</button>}
-                 </div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Titre *</label>
-                 <input type="text" value={projectData.title} onChange={e => setProjectData({...projectData, title: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Catégorie *</label>
-                 <select value={projectData.category} onChange={e => setProjectData({...projectData, category: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"><option value="clip">Clip Vidéo</option><option value="realisation">Réalisation</option><option value="directeur-photo">Dir. Photographie</option></select></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Rôle *</label>
-                 <input type="text" value={projectData.role} onChange={e => setProjectData({...projectData, role: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Année *</label>
-                 <input type="text" value={projectData.year} onChange={e => setProjectData({...projectData, year: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Lien Vidéo YouTube/Vimeo</label>
-                 <input type="url" value={projectData.videoUrl} onChange={e => setProjectData({...projectData, videoUrl: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                 
-                 <div><label className="text-xs uppercase text-blue-400 block mb-1">Lien Miniature / Cover (URL)</label>
-                 <input type="url" value={projectData.coverImageUrl} onChange={e => setProjectData({...projectData, coverImageUrl: e.target.value})} className="w-full border-l-4 border-blue-500 bg-[#1a1a1a] border-gray-800 text-white p-3" /></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Synopsis</label>
-                 <textarea rows={2} value={projectData.synopsis} onChange={e => setProjectData({...projectData, synopsis: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Crédits</label>
-                 <textarea rows={2} value={projectData.credits} onChange={e => setProjectData({...projectData, credits: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-                 
-                 <div><label className="text-xs uppercase text-gray-500 block mb-1">Stills (URLs séparées par des virgules)</label>
-                 <textarea rows={2} value={projectData.stills} onChange={e => setProjectData({...projectData, stills: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"></textarea></div>
-                 
-                <button type="submit" className="w-full bg-white text-black font-bold uppercase py-3 mt-4 hover:bg-gray-300">{editingId ? 'Sauvegarder' : 'Ajouter'}</button>
-              </form>
-            )}
-
-            {activeTab === "photos" && (
-              <form onSubmit={(e) => handleSubmit(e, 'photos')} className="space-y-4 bg-[#111] p-6 border border-gray-900">
-                 <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                   <h2 className="text-xl font-bold uppercase text-white">{editingId ? 'Modifier Photo' : 'Ajouter Photo'}</h2>
-                   {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:text-white uppercase">Annuler</button>}
-                 </div>
-                 
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Titre de la photo (Optionnel)</label>
-                <input type="text" value={photoData.title} onChange={e => setPhotoData({...photoData, title: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" /></div>
-                
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Catégorie *</label>
-                <select value={photoData.category} onChange={e => setPhotoData({...photoData, category: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"><option value="tournage">Tournage</option><option value="voyages">Voyages</option><option value="portrait">Portrait</option></select></div>
-                
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Sous-catégorie (ex: Bulgarie)</label>
-                <input type="text" list="subcategories" value={photoData.subcategory} onChange={e => setPhotoData({...photoData, subcategory: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" />
-                <datalist id="subcategories">{existingSubcategories.map((sub: any) => <option key={sub} value={sub} />)}</datalist></div>
-                
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Lien de l'image (URL) *</label>
-                <input type="url" value={photoData.imageUrl} onChange={e => setPhotoData({...photoData, imageUrl: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                
-                <button type="submit" className="w-full bg-white text-black font-bold uppercase py-3 mt-4 hover:bg-gray-300">{editingId ? 'Sauvegarder' : 'Ajouter'}</button>
-              </form>
-            )}
-            
-            {activeTab === "reviews" && (
-              <form onSubmit={(e) => handleSubmit(e, 'reviews')} className="space-y-4 bg-[#111] p-6 border border-gray-900">
-                 <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                   <h2 className="text-xl font-bold uppercase text-white">{editingId ? 'Modifier Avis' : 'Ajouter Avis'}</h2>
-                   {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:text-white uppercase">Annuler</button>}
-                 </div>
-                 
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Auteur *</label>
-                <input type="text" value={reviewData.author} onChange={e => setReviewData({...reviewData, author: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Texte de l'avis *</label>
-                <textarea rows={4} value={reviewData.text} onChange={e => setReviewData({...reviewData, text: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required></textarea></div>
-                
-                <button type="submit" className="w-full bg-white text-black font-bold uppercase py-3 mt-4 hover:bg-gray-300">{editingId ? 'Sauvegarder' : 'Ajouter'}</button>
-              </form>
-            )}
-
-            {activeTab === "equipment" && (
-              <form onSubmit={(e) => handleSubmit(e, 'equipment')} className="space-y-4 bg-[#111] p-6 border border-gray-900">
-                 <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                   <h2 className="text-xl font-bold uppercase text-white">{editingId ? 'Modifier Équipement' : 'Ajouter Équipement'}</h2>
-                   {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:text-white uppercase">Annuler</button>}
-                 </div>
-                 
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Catégorie *</label>
-                <select value={equipmentData.category} onChange={e => setEquipmentData({...equipmentData, category: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3"><option value="Caméras">Caméras</option><option value="Optiques">Optiques</option><option value="Lumière / Machinerie">Lumière / Machinerie</option></select></div>
-                
-                <div><label className="text-xs uppercase text-gray-500 block mb-1">Nom *</label>
-                <input type="text" value={equipmentData.name} onChange={e => setEquipmentData({...equipmentData, name: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-800 text-white p-3" required /></div>
-                
-                <button type="submit" className="w-full bg-white text-black font-bold uppercase py-3 mt-4 hover:bg-gray-300">{editingId ? 'Sauvegarder' : 'Ajouter'}</button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* COLONNE DROITE : LISTE (AVEC BOUTON MODIFIER) */}
-        {activeTab !== "settings" && (
-          <div className="bg-[#111] p-6 border border-gray-900 h-fit max-h-[800px] overflow-y-auto">
-            <h2 className="text-xl font-bold uppercase tracking-wider text-white mb-6 border-b border-gray-800 pb-2">Gérer ({itemsList.length})</h2>
-            {itemsList.length === 0 ? (
-              <p className="text-gray-500 italic text-sm">Aucun élément.</p>
-            ) : (
-              <ul className="space-y-4">
-                {itemsList.map(item => (
-                  <li key={item.id} className={`flex justify-between items-center p-4 border ${editingId === item.id ? 'border-white bg-[#222]' : 'border-gray-800 bg-[#1a1a1a]'}`}>
-                    <div className="truncate pr-4 text-sm text-gray-300 flex flex-col">
-                      <span className="font-bold text-white">[{item.category || 'Avis'}]</span>
-                      {item.subcategory && <span className="text-gray-500 text-xs mt-1">↳ {item.subcategory}</span>}
-                      <span className="mt-1">{item.title || item.name || item.author || "Image sans titre"}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleEdit(item)} className="text-xs uppercase tracking-widest text-blue-400 hover:text-blue-300 font-bold px-3 py-1 border border-blue-900/50 hover:bg-blue-900/20 transition-colors">Modif</button>
-                      <button onClick={() => handleDelete(item.id, activeTab)} className="text-xs uppercase tracking-widest text-red-500 hover:text-red-400 font-bold px-3 py-1 border border-red-900/50 hover:bg-red-900/20 transition-colors">X</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </div>
+      {tab === 'requests' ? (
+        <ContactRequestsPanel onStatus={setStatus} onError={handleError} onNewCount={setNewRequests} />
+      ) : collection ? (
+        <ItemsManager key={collection.key} collection={collection} onStatus={setStatus} onError={handleError} />
+      ) : (
+        <SettingsForm onStatus={setStatus} onError={handleError} />
+      )}
     </div>
   );
 }
