@@ -87,7 +87,13 @@ export const SETTINGS_SECTIONS: readonly { title: string; fields: readonly Field
   {
     title: '1. Accueil',
     fields: [
-      { name: 'home_video_url', label: "Vidéo d'accueil (.mp4)", type: 'url', upload: 'video' },
+      {
+        name: 'home_video_url',
+        label: "Vidéo d'accueil (.mp4)",
+        type: 'url',
+        upload: 'video',
+        help: 'Lien direct vers un fichier vidéo, pas un lien YouTube, Vimeo ou lecteur Cloudinary. Le plus simple : « Téléverser ».',
+      },
       { name: 'home_video_opacity', label: 'Opacité vidéo (0 à 100)', type: 'number', min: 0, max: 100 },
       { name: 'home_subtitle', label: 'Sous-titre (ex : Basé à Rennes…)', type: 'text', wide: true },
       { name: 'demo_reel_image_url', label: 'Image bande démo', type: 'url', upload: 'image' },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptFor, appendUrls, checkFile, formatBytes, MAX_IMAGE_BYTES, uploadHint } from './upload';
+import { acceptFor, appendUrls, checkFile, fitWithin, formatBytes, MAX_IMAGE_BYTES, shouldCompress, uploadHint } from './upload';
 
 describe('acceptFor', () => {
   it('liste les types acceptés', () => {
@@ -48,8 +48,24 @@ describe('appendUrls', () => {
 
 describe('uploadHint', () => {
   it('indique formats et tailles max', () => {
-    expect(uploadHint('image')).toBe('JPG, PNG, WebP, AVIF ou GIF · 15 Mo max');
+    expect(uploadHint('image')).toBe('JPG, PNG, WebP, AVIF ou GIF · 15 Mo max · optimisées automatiquement');
     expect(uploadHint('video')).toBe('MP4 ou WebM · 300 Mo max');
     expect(uploadHint('media')).toContain('300 Mo');
+  });
+});
+
+describe('fitWithin / shouldCompress', () => {
+  it('réduit proportionnellement les grandes images', () => {
+    expect(fitWithin(6000, 4000)).toEqual({ width: 2560, height: 1707 });
+    expect(fitWithin(3000, 6000, 1000)).toEqual({ width: 500, height: 1000 });
+  });
+  it("n'agrandit jamais une petite image", () => {
+    expect(fitWithin(800, 600)).toEqual({ width: 800, height: 600 });
+  });
+  it('compresse les photos mais pas les GIF ni les vidéos', () => {
+    expect(shouldCompress('image/png')).toBe(true);
+    expect(shouldCompress('image/jpeg')).toBe(true);
+    expect(shouldCompress('image/gif')).toBe(false);
+    expect(shouldCompress('video/mp4')).toBe(false);
   });
 });
